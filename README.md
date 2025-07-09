@@ -1,2 +1,7 @@
 # tetris_rust
-An implementation of the Tetris game in Rust
+
+![image1](image1)
+
+A simple Tetris game implemented in Rust. This project showcases the classic tile-matching puzzle game, leveraging Rust's safety and performance features.
+
+Enjoy playing and exploring how Tetris can be built using the Rust programming language!
