@@ -1,5 +1,17 @@
 use macroquad::prelude::*;
 
+use crate::enums::piece_type::PieceType;
+
+mod core{
+    pub mod piece;
+    pub mod point_2d;
+}
+
+mod enums {
+    pub mod direction;
+    pub mod piece_type;
+}
+
 // Board dimensions
 const ROWS: usize = 20;
 const COLS: usize = 10;
@@ -16,6 +28,8 @@ const BOARD_Y: f32 = 30.0;
 
 #[macroquad::main("Tetris Grid")]
 async fn main() {
+    let i_piece: PieceType = PieceType::I;
+
     loop {
         clear_background(BLACK);
 
