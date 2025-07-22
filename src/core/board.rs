@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::{core::constants::{COLS, ROWS}, enums::cell_type::CellType};
 
 pub struct Board {
-    rows: usize,
-    cols: usize,
+    pub rows: usize,
+    pub cols: usize,
     cells: Vec<Vec<CellType>>,
 }
 
