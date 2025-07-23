@@ -1,7 +1,6 @@
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Direction {
-    Top,
-    Bottom,
+    Down,
     Left,
     Right,
 }

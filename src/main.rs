@@ -1,24 +1,20 @@
 use macroquad::prelude::*;
 
-use crate::{core::{board::Board, constants::ROWS}, enums::{cell_type::CellType, piece_type::PieceType}, ui::render_engine};
+use crate::{core::board::Board, enums::{CellType, PieceType}, ui::render_engine};
 
-mod core{
+mod core {
     pub mod piece;
     pub mod point_2d;
     pub mod board;
     pub mod constants;
-}
-
-mod enums {
-    pub mod cell_type;
-    pub mod direction;
-    pub mod piece_type;
-    pub mod rotation_direction;
+    pub mod game;
 }
 
 mod ui {
     pub mod render_engine;
 }
+
+mod enums;
 
 #[macroquad::main("Tetris Grid")]
 async fn main() {

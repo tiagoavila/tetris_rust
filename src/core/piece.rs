@@ -82,6 +82,10 @@ impl Piece {
             self.position.x += 1;
         }
     }
+    
+    pub fn move_down(&mut self) {
+        self.position.y += 1;
+    }
 
     pub fn can_move(&self, direction: &Direction) -> bool {
         let new_col = match direction {
@@ -92,12 +96,12 @@ impl Piece {
         self.blocks.iter().all(|block| { 
             let block_col = new_col + block.x as isize;
             let block_row = self.position.y + block.y as isize;
-            self.is_in_bounds(block_row as usize, block_col as usize) 
+            Piece::is_in_bounds(block_row as usize, block_col as usize) 
         })
     }
 
     /// Checks if the given row and column are within the bounds of the game area.
-    fn is_in_bounds(&self, row: usize, col: usize) -> bool {
+    pub fn is_in_bounds(row: usize, col: usize) -> bool {
         row >= 0 && row < ROWS && col >= 0 && col < COLS
     }
 }
