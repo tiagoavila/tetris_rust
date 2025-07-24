@@ -294,16 +294,16 @@ mod tests {
         let mut game = Game::new();
         // Fill two rows
         for col in 0..COLS {
-            game.board.set_cell(19, col, CellType::Filled(BLUE));
-            game.board.set_cell(18, col, CellType::Filled(BLUE));
             game.board.set_cell(17, col, CellType::Filled(BLUE));
+            game.board.set_cell(18, col, CellType::Filled(BLUE));
+            game.board.set_cell(19, col, CellType::Filled(BLUE));
         }
 
         // set some cells to empty in the row in between
         game.board.set_cell(18, 9, CellType::Empty);
         game.board.set_cell(18, 8, CellType::Empty);
         
-        // Fill some cells in the row above
+        // Fill some cells in row 16 for control
         game.board.set_cell(16, 0, CellType::Filled(BLUE));
         game.board.set_cell(16, 1, CellType::Filled(BLUE));
         game.board.set_cell(16, 7, CellType::Filled(BLUE));
@@ -337,7 +337,7 @@ mod tests {
         assert_eq!(after[18][9], 0);
 
         // The rest of the board should be unchanged except the filled rows that were removed
-        for row in 0..10 { // remember the for is exclusive of the last row
+        for row in 0..16 { // remember the for is exclusive of the last row
             assert_eq!(before[row], after[row]);
         }
     }
