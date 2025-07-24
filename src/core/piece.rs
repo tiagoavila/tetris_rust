@@ -104,6 +104,13 @@ impl Piece {
     pub fn is_in_bounds(row: usize, col: usize) -> bool {
         row >= 0 && row < ROWS && col >= 0 && col < COLS
     }
+    
+    pub fn get_blocks_position(&self) -> Vec<Point2D> {
+        self.blocks.iter().map(|block| Point2D {
+            x: self.position.x + block.x as isize,
+            y: self.position.y + block.y as isize,
+        }).collect()
+    }
 }
 
 fn create_piece(piece_type: &PieceType) -> Vec<Point2D> {

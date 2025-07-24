@@ -57,6 +57,15 @@ impl Board {
         });
         matrix
     }
+    
+    pub fn print_board(&self) {
+        for row in &self.get_board_representation() {
+            for cell in row {
+                print!("{} ", cell);
+            }
+            println!();
+        }
+    }
 }
 
 #[test]
