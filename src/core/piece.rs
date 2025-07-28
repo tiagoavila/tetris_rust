@@ -161,3 +161,33 @@ fn test_move_right_blocked() {
     // Should not move right
     assert_eq!(piece.position.x, original_x);
 }
+
+#[test]
+fn test_z_piece_clockwise_rotations() {
+    // Initial State of Z Piece for reference: vec![Point2D::new(-1, -1), Point2D::new(-1, 0), Point2D::new(0, 0), Point2D::new(0, 1)] 
+    use crate::enums::rotation_direction::RotationDirection;
+    let mut piece = Piece::new(&PieceType::Z, Point2D::new(5, 5));
+
+    // Initial positions (relative to origin)
+    let expected0 = vec![Point2D::new(-1, -1), Point2D::new(-1, 0), Point2D::new(0, 0), Point2D::new(0, 1)];
+    assert_eq!(piece.blocks, expected0);
+
+    // After 1st CW rotation
+    piece.rotate(&RotationDirection::Clockwise);
+    let expected1 = vec![Point2D::new(1, -1), Point2D::new(0, -1), Point2D::new(0, 0), Point2D::new(-1, 0)];
+    assert_eq!(piece.blocks, expected1);
+
+    // After 2nd CW rotation
+    piece.rotate(&RotationDirection::Clockwise);
+    let expected2 = vec![Point2D::new(1, 1), Point2D::new(1, 0), Point2D::new(0, 0), Point2D::new(0, -1)];
+    assert_eq!(piece.blocks, expected2);
+
+    // After 3rd CW rotation
+    piece.rotate(&RotationDirection::Clockwise);
+    let expected3 = vec![Point2D::new(-1, 1), Point2D::new(0, 1), Point2D::new(0, 0), Point2D::new(1, 0)];
+    assert_eq!(piece.blocks, expected3);
+
+    // After 4th CW rotation (should return to original)
+    piece.rotate(&RotationDirection::Clockwise);
+    assert_eq!(piece.blocks, expected0);
+}

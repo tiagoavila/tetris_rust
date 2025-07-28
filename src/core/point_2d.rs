@@ -1,4 +1,5 @@
 /// Represents a 2D point with integer coordinates. Y comes first, then X to match a matrix-like structure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Point2D {
     pub y: isize,
     pub x: isize
