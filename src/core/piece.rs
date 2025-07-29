@@ -45,7 +45,7 @@ impl Piece {
     
     /// Rotates the piece in the specified direction.
     /// Rotation applies a formula to the piece's blocks based on the direction.
-    pub fn rotate(&mut self, direction: &RotationDirection) {
+    pub fn rotate(&mut self, direction: RotationDirection) {
         if self.piece_type == PieceType::O {
             // O piece does not rotate
             return;
@@ -173,21 +173,21 @@ fn test_z_piece_clockwise_rotations() {
     assert_eq!(piece.blocks, expected0);
 
     // After 1st CW rotation
-    piece.rotate(&RotationDirection::Clockwise);
+    piece.rotate(RotationDirection::Clockwise);
     let expected1 = vec![Point2D::new(1, -1), Point2D::new(0, -1), Point2D::new(0, 0), Point2D::new(-1, 0)];
     assert_eq!(piece.blocks, expected1);
 
     // After 2nd CW rotation
-    piece.rotate(&RotationDirection::Clockwise);
+    piece.rotate(RotationDirection::Clockwise);
     let expected2 = vec![Point2D::new(1, 1), Point2D::new(1, 0), Point2D::new(0, 0), Point2D::new(0, -1)];
     assert_eq!(piece.blocks, expected2);
 
     // After 3rd CW rotation
-    piece.rotate(&RotationDirection::Clockwise);
+    piece.rotate(RotationDirection::Clockwise);
     let expected3 = vec![Point2D::new(-1, 1), Point2D::new(0, 1), Point2D::new(0, 0), Point2D::new(1, 0)];
     assert_eq!(piece.blocks, expected3);
 
     // After 4th CW rotation (should return to original)
-    piece.rotate(&RotationDirection::Clockwise);
+    piece.rotate(RotationDirection::Clockwise);
     assert_eq!(piece.blocks, expected0);
 }

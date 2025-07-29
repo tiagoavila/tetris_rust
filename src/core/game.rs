@@ -1,10 +1,13 @@
 use std::{collections::HashSet, hash::Hash};
 
-use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::CellType};
+use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::{CellType, RotationDirection}};
 
 pub struct Game {
     pub board: Board,
     pub current_piece: Option<Piece>,
+    pub fall_speed_seconds_per_line: f64,
+    default_fall_speed: f64,
+    fall_speed_soft_drop: f64, // Speed at which the piece falls
 }
 
 impl Game {
@@ -12,6 +15,9 @@ impl Game {
         Game {
             board: Board::new(),
             current_piece: None,
+            fall_speed_seconds_per_line: 1.0, // 1 Second per line
+            default_fall_speed: 1.0,
+            fall_speed_soft_drop: 1.0 / 20.0
         }
     }
     
@@ -33,6 +39,18 @@ impl Game {
 
         false // No collision
     }
+
+    pub fn move_piece_right(&mut self) {
+        if let Some(piece) = &mut self.current_piece {
+            piece.move_right();
+        }
+    }
+
+    pub fn move_piece_left(&mut self) {
+        if let Some(piece) = &mut self.current_piece {
+            piece.move_left();
+        }
+    }
     
     pub fn move_piece_down(&mut self) {
         if let Some(piece) = &mut self.current_piece {
@@ -40,9 +58,35 @@ impl Game {
         }
     }
     
+    pub fn rotate_piece(&mut self, direction: RotationDirection) {
+        if let Some(piece) = &mut self.current_piece {
+            piece.rotate(direction);
+        }
+    }
+    
+    pub fn start_soft_drop(&mut self) {
+        self.fall_speed_seconds_per_line = self.fall_speed_soft_drop;
+    }
+    
+    pub fn stop_soft_drop(&mut self) {
+        self.fall_speed_seconds_per_line = self.default_fall_speed;
+    }
+    
+    pub fn hard_drop(&mut self) {
+        loop {
+            let collision = self.detect_collision();
+            if collision {
+                break; // Stop when collision is detected
+            } 
+
+            if let Some(piece) = &mut self.current_piece {
+                piece.move_down();
+            }
+        }
+    }
+    
     pub fn detect_filled_row(&mut self) {
-        let mut filled_rows: HashSet<usize> = HashSet::new();
-        let mut upper_most_filled_row: usize = ROWS - 1;
+        let mut down_most_filled_row: Option<usize> = None;
 
         self.board.cells = self.board.cells
             .clone()
@@ -52,9 +96,8 @@ impl Game {
             .filter_map(|(row_index, row)| {
                 if row.iter().all(|cell| *cell != CellType::Empty) {
                     // Row is filled, replace with empty row
-                    filled_rows.insert(row_index);
-                    if row_index < upper_most_filled_row {
-                        upper_most_filled_row = row_index;
+                    if down_most_filled_row.is_none() || row_index > down_most_filled_row.unwrap() {
+                        down_most_filled_row = Some(row_index);
                     }
                     Some(vec![CellType::Empty; COLS])
                 } else {
@@ -65,43 +108,26 @@ impl Game {
             .rev()
             .collect();
         
-        let last_row_index = ROWS - 1;
+        if let Some(down_most_filled_row) = down_most_filled_row {
+            let last_row_index = ROWS - 1;
         
-        for row_index in (0..upper_most_filled_row).rev() {
-            if self.board.cells[row_index].iter().all(|cell| *cell == CellType::Empty) {
-                break; // Skip empty rows
-            }
-
-            for col_index in 0..COLS {
-                if self.board.cells[row_index][col_index] != CellType::Empty {
-                    let mut target_row_index = row_index + 1;
-                    loop {
-                        if target_row_index == last_row_index {
-                            self.board.cells[last_row_index][col_index] = self.board.cells[row_index][col_index].clone();
-                            self.board.cells[row_index][col_index] = CellType::Empty;
-                            break; // Reached the last row, no more rows to shift down
-                        } else if self.board.cells[target_row_index + 1][col_index] != CellType::Empty {
-                            self.board.cells[target_row_index][col_index] = self.board.cells[row_index][col_index].clone();
-                            self.board.cells[row_index][col_index] = CellType::Empty;
-                            break;
-                        } else {
-                            target_row_index += 1;
+            for row_index in (0..down_most_filled_row).rev() {
+                for col_index in 0..COLS {
+                    if self.board.cells[row_index][col_index] != CellType::Empty {
+                        let mut target_row_index = row_index + 1;
+                        loop {
+                            if target_row_index == last_row_index || self.board.cells[target_row_index + 1][col_index] != CellType::Empty {
+                                self.board.cells[target_row_index][col_index] = self.board.cells[row_index][col_index].clone();
+                                self.board.cells[row_index][col_index] = CellType::Empty;
+                                break; 
+                            } else {
+                                target_row_index += 1;
+                            }
                         }
                     }
                 }
             }
         }
-        
-        // let mut filled_rows_vec: Vec<_> = filled_rows.iter().cloned().collect();
-        // filled_rows_vec.sort();
-        // for row_index in filled_rows_vec {
-        //     // Shift all rows above the filled row down
-        //     for r in (1..row_index).rev() {
-        //         self.board.cells[r] = self.board.cells[r - 1].clone();
-        //     }
-        //     // Set the top row to empty
-        //     self.board.cells[0] = vec![CellType::Empty; COLS];
-        // }
     }
     
     pub fn print_board_with_current_piece(&self) {
@@ -373,14 +399,6 @@ mod tests {
         for row in 0..16 { // remember the for is exclusive of the last row
             assert_eq!(before[row], after[row]);
         }
-    }
-    
-    #[test]
-    fn print_above_rows(){
-        for row_index in (0..17).rev() {
-            println!("Row index: {}", row_index);
-        }
-        assert!(true); // Just to ensure the test runs without panic
     }
 
     fn initialize_test_board(game: &mut Game) {
