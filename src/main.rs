@@ -36,11 +36,11 @@ async fn main() {
             game.move_piece_right();
         }
 
-        if is_key_released(KeyCode::Up) || is_key_released(KeyCode::K) || is_key_released(KeyCode::W) {
+        if is_key_released(KeyCode::Up) || is_key_released(KeyCode::K) || is_key_released(KeyCode::W) || is_key_released(KeyCode::X) {
             game.rotate_piece(RotationDirection::Clockwise);
         }
 
-        if is_key_released(KeyCode::J) || is_key_released(KeyCode::Q) {
+        if is_key_released(KeyCode::J) || is_key_released(KeyCode::Q) || is_key_released(KeyCode::Z) {
             game.rotate_piece(RotationDirection::CounterClockwise);
         }
         

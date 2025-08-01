@@ -62,6 +62,7 @@ impl Game {
         loop {
             let collision = self.detect_collision();
             if collision {
+                self.do_after_collision();
                 break; // Stop when collision is detected
             } 
 
@@ -134,11 +135,15 @@ impl Game {
     pub fn do_on_each_loop(&mut self) {
         self.move_piece_down();
         if self.detect_collision() {
-            self.board.place_piece(&self.current_piece.as_ref().unwrap().clone());
-            self.detect_filled_rows();
-            self.current_piece = Some(Piece::generate_random_piece());
+            self.do_after_collision();
         }
  
+    }
+
+    fn do_after_collision(&mut self) {
+        self.board.place_piece(&self.current_piece.as_ref().unwrap().clone());
+        self.detect_filled_rows();
+        self.current_piece = Some(Piece::generate_random_piece());
     }
     
     pub fn print_board_with_current_piece(&self) {
