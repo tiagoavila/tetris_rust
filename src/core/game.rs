@@ -1,4 +1,6 @@
 
+use std::collections::HashSet;
+
 use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::{CellType, RotationDirection}};
 
 pub struct Game {
@@ -89,7 +91,8 @@ impl Game {
     }
     
     pub fn detect_filled_rows(&mut self) {
-        let mut down_most_filled_row: Option<usize> = None;
+        // let mut down_most_filled_row: Option<usize> = None;
+        let mut filled_rows: HashSet<usize> = HashSet::new();
 
         self.board.cells = self.board.cells
             .clone()
@@ -99,9 +102,10 @@ impl Game {
             .filter_map(|(row_index, row)| {
                 if row.iter().all(|cell| *cell != CellType::Empty) {
                     // Row is filled, replace with empty row
-                    if down_most_filled_row.is_none() || row_index > down_most_filled_row.unwrap() {
-                        down_most_filled_row = Some(row_index);
-                    }
+                    filled_rows.insert(row_index);
+                    // if down_most_filled_row.is_none() || row_index > down_most_filled_row.unwrap() {
+                    //     down_most_filled_row = Some(row_index);
+                    // }
                     Some(vec![CellType::Empty; COLS])
                 } else {
                     // Keep the row as is
@@ -110,26 +114,20 @@ impl Game {
             })
             .rev()
             .collect();
-        
-        if let Some(down_most_filled_row) = down_most_filled_row {
-            let last_row_index = ROWS - 1;
-        
-            for row_index in (0..down_most_filled_row).rev() {
-                for col_index in 0..COLS {
-                    if self.board.cells[row_index][col_index] != CellType::Empty {
-                        let mut target_row_index = row_index + 1;
-                        loop {
-                            if target_row_index == last_row_index || self.board.cells[target_row_index + 1][col_index] != CellType::Empty {
-                                self.board.cells[target_row_index][col_index] = self.board.cells[row_index][col_index].clone();
-                                self.board.cells[row_index][col_index] = CellType::Empty;
-                                break; 
-                            } else {
-                                target_row_index += 1;
-                            }
-                        }
-                    }
+
+        let mut filled_rows_vec: Vec<_> = filled_rows.iter().cloned().collect();
+        filled_rows_vec.sort();
+        for row_index in filled_rows_vec {
+            // Shift all rows above the filled row down
+            for r in (1..=row_index).rev() {
+                if self.board.cells[r].iter().all(|cell| *cell != CellType::Empty) {
+                    break; //stop loop when finding an empty row
                 }
+
+                self.board.cells[r] = self.board.cells[r - 1].clone();
             }
+            // Set the top row to empty
+            self.board.cells[0] = vec![CellType::Empty; COLS];
         }
     }
     
@@ -379,6 +377,13 @@ mod tests {
         game.board.set_cell(16, 0, CellType::Filled(BLUE));
         game.board.set_cell(16, 1, CellType::Filled(BLUE));
         game.board.set_cell(16, 7, CellType::Filled(BLUE));
+        
+        // Board representation before detecting filled rows
+        // row 0 to 15: 0 0 0 0 0 0 0 0 0 0
+        // row 16:      1 1 0 0 0 0 0 1 0 0
+        // row 17:      1 1 1 1 1 1 1 1 1 1
+        // row 18:      1 1 1 1 1 1 1 1 0 0
+        // row 19:      1 1 1 1 1 1 1 1 1 1
 
         let before = game.board.get_board_representation();
         game.print_board_with_current_piece();
