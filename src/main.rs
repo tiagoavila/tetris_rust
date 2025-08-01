@@ -25,7 +25,7 @@ mod ui {
 
 mod enums;
 
-#[macroquad::main("Tetris Grid")]
+#[macroquad::main("Tetris")]
 async fn main() {
     let mut game = Game::new();
     let mut last_update = get_time();
@@ -39,6 +39,10 @@ async fn main() {
         clear_background(BLACK);
 
         // Handle user input
+        if is_key_released(KeyCode::Escape){
+            break;
+        }
+
         if is_key_released(KeyCode::Left) || is_key_released(KeyCode::A) {
             game.move_piece_left();
         }
@@ -52,7 +56,7 @@ async fn main() {
             game.rotate_piece(RotationDirection::Clockwise);
         }
 
-        if is_key_released(KeyCode::J) || is_key_released(KeyCode::Q) || is_key_released(KeyCode::Z)
+        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::Z)
         {
             game.rotate_piece(RotationDirection::CounterClockwise);
         }
@@ -77,6 +81,7 @@ async fn main() {
         }
 
         render_engine::draw_board(&game.board);
+
         if let Some(ref mut game_piece) = game.current_piece {
             render_engine::draw_piece(&game_piece);
         }

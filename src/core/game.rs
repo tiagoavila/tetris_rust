@@ -137,10 +137,10 @@ impl Game {
     
     pub fn do_on_each_loop(&mut self) {
         self.move_piece_down();
+        //TODO: implement game over conditons
         if self.detect_collision() {
             self.do_after_collision();
         }
- 
     }
 
     fn do_after_collision(&mut self) {
