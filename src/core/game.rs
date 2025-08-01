@@ -1,4 +1,3 @@
-use std::{collections::HashSet, hash::Hash};
 
 use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::{CellType, RotationDirection}};
 
@@ -21,23 +20,8 @@ impl Game {
         }
     }
     
-    pub fn detect_collision(&self) -> bool {
-        if let Some(piece) = &self.current_piece {
-            for block in &piece.blocks {
-                let row = piece.position.y + block.y as isize;
-                if row == (ROWS - 1) as isize {
-                    return true; // Collision with bottom
-                }
-
-                let col = piece.position.x + block.x as isize;
-                // Check if cell bellow the current block is filled
-                if self.board.cells[(row + 1) as usize][col as usize] != CellType::Empty {
-                    return true; // Collision detected
-                }
-            }
-        }
-
-        false // No collision
+    pub fn start(&mut self) {
+        self.current_piece = Some(Piece::generate_random_piece());
     }
 
     pub fn move_piece_right(&mut self) {
@@ -85,7 +69,26 @@ impl Game {
         }
     }
     
-    pub fn detect_filled_row(&mut self) {
+    pub fn detect_collision(&self) -> bool {
+        if let Some(piece) = &self.current_piece {
+            for block in &piece.blocks {
+                let row = piece.position.y + block.y as isize;
+                if row == (ROWS - 1) as isize {
+                    return true; // Collision with bottom
+                }
+
+                let col = piece.position.x + block.x as isize;
+                // Check if cell bellow the current block is filled
+                if self.board.cells[(row + 1) as usize][col as usize] != CellType::Empty {
+                    return true; // Collision detected
+                }
+            }
+        }
+
+        false // No collision
+    }
+    
+    pub fn detect_filled_rows(&mut self) {
         let mut down_most_filled_row: Option<usize> = None;
 
         self.board.cells = self.board.cells
@@ -128,6 +131,16 @@ impl Game {
                 }
             }
         }
+    }
+    
+    pub fn do_on_each_loop(&mut self) {
+        self.move_piece_down();
+        if self.detect_collision() {
+            self.board.place_piece(&self.current_piece.as_ref().unwrap().clone());
+            self.detect_filled_rows();
+            self.current_piece = Some(Piece::generate_random_piece());
+        }
+ 
     }
     
     pub fn print_board_with_current_piece(&self) {
@@ -274,7 +287,7 @@ mod tests {
         initialize_test_board(&mut game);
         let before = game.board.get_board_representation();
         game.print_board_with_current_piece();
-        game.detect_filled_row();
+        game.detect_filled_rows();
         println!("After detecting filled row:");
         let after = game.board.get_board_representation();
         game.print_board_with_current_piece();
@@ -296,7 +309,7 @@ mod tests {
 
         let before = game.board.get_board_representation();
         game.print_board_with_current_piece();
-        game.detect_filled_row();
+        game.detect_filled_rows();
         println!("After detecting filled row:");
         let after = game.board.get_board_representation();
         game.print_board_with_current_piece();
@@ -329,7 +342,7 @@ mod tests {
 
         let before = game.board.get_board_representation();
         game.print_board_with_current_piece();
-        game.detect_filled_row();
+        game.detect_filled_rows();
         println!("After detecting filled row:");
         let after = game.board.get_board_representation();
         game.print_board_with_current_piece();
@@ -369,7 +382,7 @@ mod tests {
 
         let before = game.board.get_board_representation();
         game.print_board_with_current_piece();
-        game.detect_filled_row();
+        game.detect_filled_rows();
         println!("After detecting filled row:");
         let after = game.board.get_board_representation();
         game.print_board_with_current_piece();

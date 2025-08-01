@@ -45,6 +45,12 @@ impl Board {
             self.cells[row][col] = cell_type;
         }
     }
+    
+    pub fn place_piece(&mut self, piece: &Piece) {
+        for block in piece.get_blocks_position() {
+            self.set_cell(block.y as usize, block.x as usize, CellType::Filled(piece.color));
+        }
+    }
 
     pub fn get_board_representation(&self) -> Vec<Vec<usize>> {
         let mut matrix = vec![vec![0 as usize; self.cols]; self.rows];

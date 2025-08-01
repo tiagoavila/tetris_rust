@@ -60,8 +60,7 @@ async fn main() {
         // Update piece position every interval
         let now = get_time();
         if now - last_update > game.fall_speed_seconds_per_line {
-            game.move_piece_down();
-            game.detect_collision();
+            game.do_on_each_loop();
             last_update = now;
         }
 
