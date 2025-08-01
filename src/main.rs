@@ -19,8 +19,8 @@ mod core {
 }
 
 mod ui {
-    pub mod render_engine;
     pub mod audio_player;
+    pub mod render_engine;
 }
 
 mod enums;
@@ -47,10 +47,7 @@ async fn main() {
             game.move_piece_right();
         }
 
-        if is_key_released(KeyCode::Up)
-            || is_key_released(KeyCode::K)
-            || is_key_released(KeyCode::W)
-            || is_key_released(KeyCode::X)
+        if is_key_released(KeyCode::Up) || is_key_released(KeyCode::W) || is_key_released(KeyCode::X)
         {
             game.rotate_piece(RotationDirection::Clockwise);
         }
@@ -61,13 +58,6 @@ async fn main() {
         }
 
         if is_key_down(KeyCode::S) || is_key_down(KeyCode::Down) {
-            macroquad::text::draw_text(
-                "pressing s or down",
-                BOARD_X + BOARD_WIDTH + 10.0,
-                BOARD_Y + 20.0,
-                20.0,
-                WHITE,
-            );
             game.start_soft_drop();
         }
 
