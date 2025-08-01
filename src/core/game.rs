@@ -6,6 +6,7 @@ use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::
 pub struct Game {
     pub board: Board,
     pub current_piece: Option<Piece>,
+    pub next_piece: Option<Piece>,
     pub fall_speed_seconds_per_line: f64,
     default_fall_speed: f64,
     fall_speed_soft_drop: f64, // Speed at which the piece falls
@@ -16,6 +17,7 @@ impl Game {
         Game {
             board: Board::new(),
             current_piece: None,
+            next_piece: None,
             fall_speed_seconds_per_line: 1.0, // 1 Second per line
             default_fall_speed: 1.0,
             fall_speed_soft_drop: 1.0 / 20.0
@@ -24,6 +26,7 @@ impl Game {
     
     pub fn start(&mut self) {
         self.current_piece = Some(Piece::generate_random_piece());
+        self.next_piece = Some(Piece::generate_random_piece());
     }
 
     pub fn move_piece_right(&mut self) {
@@ -143,7 +146,8 @@ impl Game {
     fn do_after_collision(&mut self) {
         self.board.place_piece(&self.current_piece.as_ref().unwrap().clone());
         self.detect_filled_rows();
-        self.current_piece = Some(Piece::generate_random_piece());
+        self.current_piece = self.next_piece.clone();
+        self.next_piece = Some(Piece::generate_random_piece());
     }
     
     pub fn print_board_with_current_piece(&self) {
