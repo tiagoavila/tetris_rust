@@ -7,7 +7,7 @@ use crate::{
         game::Game,
     },
     enums::{CellType, PieceType, RotationDirection},
-    ui::render_engine,
+    ui::{audio_player::AudioPlayer, render_engine},
 };
 
 mod core {
@@ -20,6 +20,7 @@ mod core {
 
 mod ui {
     pub mod render_engine;
+    pub mod audio_player;
 }
 
 mod enums;
@@ -30,6 +31,9 @@ async fn main() {
     let mut last_update = get_time();
 
     game.start();
+
+    let player = AudioPlayer::new();
+    player.play_loop();
 
     loop {
         clear_background(BLACK);
