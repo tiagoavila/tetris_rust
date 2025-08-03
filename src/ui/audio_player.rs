@@ -16,7 +16,7 @@ impl AudioPlayer {
     }
 
     pub fn play_loop(&self) {
-        let file = File::open("sounds/Tetris.mp3").expect("Failed to open audio file");
+        let file = File::open("./src/sounds/Tetris.mp3").expect("Failed to open audio file");
         let source = Decoder::new(BufReader::new(file)).expect("Failed to decode audio file");
         self.sink.append(source.repeat_infinite());
     }
