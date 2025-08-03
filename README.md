@@ -7,6 +7,8 @@
 
 This is a simple Tetris game implemented in Rust. It features the classic tile-matching puzzle gameplay, leveraging Rust's safety and performance. The game includes smooth piece movement, rotation, line clearing, scoring, and audio playback.
 
+> **Note:** The implementation of this game was inspired by the article ["Challenging projects every programmer should try"](https://austinhenley.com/blog/challengingprojects.html).
+
 ## Libraries Used
 
 - **macroquad**: For graphics, windowing, and input handling.
