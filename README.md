@@ -54,7 +54,7 @@ Cargo.toml              # Rust dependencies and metadata
 Ensure you have Rust installed. Run the game with:
 
 ```
-cargo run --release
+cargo run
 ```
 
 Enjoy playing and exploring how Tetris can be built using the Rust programming language!
