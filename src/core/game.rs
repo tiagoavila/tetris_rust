@@ -1,29 +1,63 @@
+use std::collections::HashMap;
+const DROP_SPEED_DIVISOR: f64 = 20.0;
 
-use std::collections::HashSet;
-
-use crate::{core::{board::Board, constants::{COLS, ROWS}, piece::Piece}, enums::{CellType, RotationDirection}};
+use crate::{
+    core::{
+        board::Board,
+        constants::{COLS, ROWS},
+        piece::Piece,
+    },
+    enums::{CellType, GameState, PieceType, RotationDirection},
+};
 
 pub struct Game {
     pub board: Board,
     pub current_piece: Option<Piece>,
     pub next_piece: Option<Piece>,
     pub fall_speed_seconds_per_line: f64,
+    pub level: usize,
+    pub filled_rows_count: usize,
     default_fall_speed: f64,
-    fall_speed_soft_drop: f64, // Speed at which the piece falls
+    soft_drop_speed: f64, // Speed at which the piece falls
+    drop_speeds: HashMap<usize, f64>,
 }
 
 impl Game {
     pub fn new() -> Self {
+        // Value is second per line
+        let drop_speeds: HashMap<usize, f64> = HashMap::from([
+            (1, 1.0),
+            (2, 0.793),
+            (3, 0.618),
+            (4, 0.473),
+            (5, 0.355),
+            (6, 0.262),
+            (7, 0.190),
+            (8, 0.135),
+            (9, 0.094),
+            (10, 0.064),
+            (11, 0.043),
+            (12, 0.028),
+            (13, 0.018),
+            (14, 0.011),
+            (15, 0.007),
+        ]);
+
+        let initial_fall_speed = drop_speeds[&1];
+
         Game {
             board: Board::new(),
             current_piece: None,
             next_piece: None,
-            fall_speed_seconds_per_line: 1.0, // 1 Second per line
-            default_fall_speed: 1.0,
-            fall_speed_soft_drop: 1.0 / 20.0
+            fall_speed_seconds_per_line: initial_fall_speed,
+            default_fall_speed: drop_speeds[&1],
+            soft_drop_speed: initial_fall_speed / DROP_SPEED_DIVISOR,
+            level: 1,
+            filled_rows_count: 0,
+            drop_speeds,
         }
     }
-    
+
     pub fn start(&mut self) {
         self.current_piece = Some(Piece::generate_random_piece());
         self.next_piece = Some(Piece::generate_random_piece());
@@ -40,41 +74,41 @@ impl Game {
             piece.move_left();
         }
     }
-    
+
     pub fn move_piece_down(&mut self) {
         if let Some(piece) = &mut self.current_piece {
             piece.move_down();
         }
     }
-    
+
     pub fn rotate_piece(&mut self, direction: RotationDirection) {
         if let Some(piece) = &mut self.current_piece {
             piece.rotate(direction);
         }
     }
-    
+
     pub fn start_soft_drop(&mut self) {
-        self.fall_speed_seconds_per_line = self.fall_speed_soft_drop;
+        self.fall_speed_seconds_per_line = self.soft_drop_speed;
     }
-    
+
     pub fn stop_soft_drop(&mut self) {
         self.fall_speed_seconds_per_line = self.default_fall_speed;
     }
-    
+
     pub fn hard_drop(&mut self) {
         loop {
             let collision = self.detect_collision();
             if collision {
                 self.do_after_collision();
                 break; // Stop when collision is detected
-            } 
+            }
 
             if let Some(piece) = &mut self.current_piece {
                 piece.move_down();
             }
         }
     }
-    
+
     pub fn detect_collision(&self) -> bool {
         if let Some(piece) = &self.current_piece {
             for block in &piece.blocks {
@@ -93,63 +127,105 @@ impl Game {
 
         false // No collision
     }
-    
-    pub fn detect_filled_rows(&mut self) {
-        // let mut down_most_filled_row: Option<usize> = None;
-        let mut filled_rows: HashSet<usize> = HashSet::new();
 
-        self.board.cells = self.board.cells
+    pub fn detect_filled_rows(&mut self) {
+        let mut filled_rows: Vec<usize> = Vec::new();
+
+        self.board.cells = self
+            .board
+            .cells
             .clone()
             .into_iter()
             .enumerate()
-            .rev()
             .filter_map(|(row_index, row)| {
                 if row.iter().all(|cell| *cell != CellType::Empty) {
+                    filled_rows.push(row_index);
+
                     // Row is filled, replace with empty row
-                    filled_rows.insert(row_index);
-                    // if down_most_filled_row.is_none() || row_index > down_most_filled_row.unwrap() {
-                    //     down_most_filled_row = Some(row_index);
-                    // }
                     Some(vec![CellType::Empty; COLS])
                 } else {
                     // Keep the row as is
                     Some(row)
                 }
             })
-            .rev()
             .collect();
 
-        let mut filled_rows_vec: Vec<_> = filled_rows.iter().cloned().collect();
-        filled_rows_vec.sort();
-        for row_index in filled_rows_vec {
+        self.maybe_update_level(filled_rows.len());
+
+        // Iterate from highest to lowest rows moving the ones above every filled row down
+        filled_rows.sort();
+
+        for filled_row_index in filled_rows {
             // Shift all rows above the filled row down
-            for r in (1..=row_index).rev() {
-                if self.board.cells[r].iter().all(|cell| *cell != CellType::Empty) {
+            for row_index in (1..=filled_row_index).rev() {
+                if self.board.cells[row_index]
+                    .iter()
+                    .all(|cell| *cell != CellType::Empty)
+                {
                     break; //stop loop when finding an empty row
                 }
 
-                self.board.cells[r] = self.board.cells[r - 1].clone();
+                self.board.cells[row_index] = self.board.cells[row_index - 1].clone();
             }
             // Set the top row to empty
             self.board.cells[0] = vec![CellType::Empty; COLS];
         }
     }
-    
-    pub fn do_on_each_loop(&mut self) {
-        self.move_piece_down();
-        //TODO: implement game over conditons
-        if self.detect_collision() {
-            self.do_after_collision();
+
+    fn maybe_update_level(&mut self, filled_rows_count: usize) {
+        self.filled_rows_count += filled_rows_count;
+        let quotient_10 = self.filled_rows_count / 10;
+        let new_level = quotient_10 + 1;
+        if new_level != self.level {
+            self.level = std::cmp::min(new_level, 15);
+            let new_speed = self.drop_speeds[&self.level];
+            self.fall_speed_seconds_per_line = new_speed;
+            self.default_fall_speed = new_speed;
+            self.soft_drop_speed = new_speed / DROP_SPEED_DIVISOR;
         }
     }
 
+    pub fn move_piece_down_and_detect_collision(&mut self) -> GameState {
+        //TODO: implement game over conditons before moving piece down to allow checking right after placing a new piece
+        if self.detect_end_game_condition() {
+            return GameState::GameOver;
+        }
+
+        self.move_piece_down();
+        if self.detect_collision() {
+            self.do_after_collision();
+        }
+
+        GameState::Continue
+    }
+
+    pub fn detect_end_game_condition(&self) -> bool {
+        if let Some(piece) = &self.current_piece {
+            for block in &piece.blocks {
+                let row = piece.position.y + block.y as isize;
+                let col = piece.position.x + block.x as isize;
+                let row_below = row + 1;
+                // Check if cell bellow the current block is filled
+                if self.board.cells[(row_below) as usize][col as usize] != CellType::Empty {
+                    // Piece I throws end of game colliding with row 1, all other pieces with row 2
+                    if (piece.piece_type == PieceType::I && row_below == 1) || row_below == 2 {
+                        return true; // Collision detected
+                    }
+                }
+            }
+        }
+
+        false // No collision
+    }
+
     fn do_after_collision(&mut self) {
-        self.board.place_piece(&self.current_piece.as_ref().unwrap().clone());
+        self.board
+            .place_piece(&self.current_piece.as_ref().unwrap().clone());
         self.detect_filled_rows();
         self.current_piece = self.next_piece.clone();
         self.next_piece = Some(Piece::generate_random_piece());
     }
-    
+
     pub fn print_board_with_current_piece(&self) {
         let mut board_representation = self.board.get_board_representation();
         if let Some(piece) = &self.current_piece {
@@ -159,7 +235,7 @@ impl Game {
                 let col = block.x as usize;
                 board_representation[row][col] = 1; // Mark the piece's blocks
             }
-        } 
+        }
 
         for row in board_representation.iter() {
             for cell in row.iter() {
@@ -174,7 +250,10 @@ impl Game {
 mod tests {
     use macroquad::color::BLUE;
 
-    use crate::{core::{constants::COLS, point_2d::Point2D}, enums::PieceType};
+    use crate::{
+        core::{constants::COLS, point_2d::Point2D},
+        enums::PieceType,
+    };
 
     use super::*;
 
@@ -185,7 +264,7 @@ mod tests {
         assert_eq!(game.board.cols, COLS);
         assert!(game.current_piece.is_none());
     }
-    
+
     #[test]
     fn board_with_filled_cells() {
         let mut game = Game::new();
@@ -193,7 +272,7 @@ mod tests {
         let expected_board = get_expected_board_representation_on_initialization();
         assert_eq!(game.board.get_board_representation(), expected_board);
     }
-    
+
     #[test]
     fn detect_collision_with_bottom_row() {
         let mut game = Game::new();
@@ -204,16 +283,16 @@ mod tests {
         // row 0 to 17: 0 0 0 0 0 0 0 0 0 0
         // row 18:      1 0 0 0 0 0 1 1 1 1 // I piece is here at the right side
         // row 19:      1 0 0 0 1 0 0 0 0 0
-        
+
         game.move_piece_down();
         assert!(game.detect_collision()); // Collision with bottom
         // After moving down, the piece should collide with the bottom row.
         // After moving down, the board will look like this:
-        // row 0 to 17: 0 0 0 0 0 0 0 0 0 0 
+        // row 0 to 17: 0 0 0 0 0 0 0 0 0 0
         // row 18:      1 0 0 0 0 0 0 0 0 0 // I piece moved down
         // row 19:      1 0 0 0 1 0 1 1 1 1 // I piece is here at the bottom
     }
-    
+
     #[test]
     fn detect_collision_with_filled_cells() {
         let mut game = Game::new();
@@ -226,7 +305,7 @@ mod tests {
         // row 17:      0 0 0 0 0 0 0 0 0 0
         // row 18:      1 0 0 0 0 0 0 0 0 0
         // row 19:      1 0 0 0 1 0 0 0 0 0
-        
+
         game.move_piece_down();
         assert!(game.detect_collision()); // Collision with bottom
         // After moving down, the piece should collide with the filled cells below it.
@@ -247,9 +326,9 @@ mod tests {
         assert_eq!(game.detect_collision(), false);
 
         // this Board will look like this before moving down:
-        // row 0 to 17: 0 1 1 0 0 0 0 0 0 0 // Z piece is here 
+        // row 0 to 17: 0 1 1 0 0 0 0 0 0 0 // Z piece is here
         // row 18:      1 0 1 1 0 0 0 0 0 0 // Z piece is here
-        // row 19:      1 0 0 0 1 0 0 0 0 0 
+        // row 19:      1 0 0 0 1 0 0 0 0 0
 
         // Move Z piece down, should now collide with the bottom row
         game.move_piece_down();
@@ -258,7 +337,7 @@ mod tests {
         // After moving down, the board will look like this:
         // row 0 to 17: 0 0 0 0 0 0 0 0 0 0
         // row 18:      1 1 1 0 0 0 0 0 0 0 // Z piece moved down
-        // row 19:      1 0 1 1 1 0 0 0 0 0 // Z piece is here 
+        // row 19:      1 0 1 1 1 0 0 0 0 0 // Z piece is here
         // This checks that the Z piece collides with the bottom row after moving down.
     }
 
@@ -273,8 +352,8 @@ mod tests {
 
         // this Board will look like this before moving down:
         // row 0 to 16: 1 1 0 0 0 0 0 0 0 0 // Z piece is here
-        // row 17:      0 1 1 0 0 0 0 0 0 0 // Z piece is here 
-        // row 18:      1 0 0 0 0 0 0 0 0 0 
+        // row 17:      0 1 1 0 0 0 0 0 0 0 // Z piece is here
+        // row 18:      1 0 0 0 0 0 0 0 0 0
         // row 19:      1 0 0 0 1 0 0 0 0 0
 
         // Move Z piece down, should now collide with filled cell at (19, 0)
@@ -287,7 +366,7 @@ mod tests {
         // row 19:      1 1 0 0 1 0 0 0 0 0 // Z piece is here (collides with filled cell at (19,0))
         // This checks that the Z piece collides with the filled cell below after moving down.
     }
-    
+
     #[test]
     fn detect_filled_row_should_not_change_when_there_are_no_filled_rows() {
         let mut game = Game::new();
@@ -302,7 +381,7 @@ mod tests {
         // The board should remain unchanged
         assert_eq!(before, after);
     }
-    
+
     #[test]
     fn detect_filled_row() {
         let mut game = Game::new();
@@ -329,11 +408,12 @@ mod tests {
         assert_eq!(after[19][1], 1);
 
         // The rest of the board should be unchanged because they are all empty cells
-        for row in 0..18 { // remember the for is exclusive of the last row
+        for row in 0..18 {
+            // remember the for is exclusive of the last row
             assert_eq!(before[row], after[row]);
         }
     }
-    
+
     #[test]
     fn detect_filled_row_when_there_are_multiple_filled_rows() {
         let mut game = Game::new();
@@ -342,7 +422,7 @@ mod tests {
             game.board.set_cell(19, col, CellType::Filled(BLUE));
             game.board.set_cell(18, col, CellType::Filled(BLUE));
         }
-        
+
         // Fill some other cells for control
         game.board.set_cell(17, 0, CellType::Filled(BLUE));
         game.board.set_cell(17, 1, CellType::Filled(BLUE));
@@ -363,11 +443,12 @@ mod tests {
         assert_eq!(after[19][1], 1);
 
         // The rest of the board should be unchanged because they are all empty cells, touched rows were 17, 18 and 19
-        for row in 0..17 { // remember the for is exclusive of the last row
+        for row in 0..17 {
+            // remember the for is exclusive of the last row
             assert_eq!(before[row], after[row]);
         }
     }
-    
+
     #[test]
     fn detect_filled_row_when_there_are_multiple_filled_rows_and_some_empty_rows() {
         let mut game = Game::new();
@@ -381,12 +462,12 @@ mod tests {
         // set some cells to empty in the row in between
         game.board.set_cell(18, 9, CellType::Empty);
         game.board.set_cell(18, 8, CellType::Empty);
-        
+
         // Fill some cells in row 16 for control
         game.board.set_cell(16, 0, CellType::Filled(BLUE));
         game.board.set_cell(16, 1, CellType::Filled(BLUE));
         game.board.set_cell(16, 7, CellType::Filled(BLUE));
-        
+
         // Board representation before detecting filled rows
         // row 0 to 15: 0 0 0 0 0 0 0 0 0 0
         // row 16:      1 1 0 0 0 0 0 1 0 0
@@ -411,7 +492,7 @@ mod tests {
         for col in 0..8 {
             assert_eq!(after[19][col], 1);
         }
-        
+
         // Cells from row 16 should be moved down
         assert_eq!(after[18][0], 1);
         assert_eq!(after[18][1], 1);
@@ -423,7 +504,8 @@ mod tests {
         assert_eq!(after[18][9], 0);
 
         // The rest of the board should be unchanged except the filled rows that were removed
-        for row in 0..16 { // remember the for is exclusive of the last row
+        for row in 0..16 {
+            // remember the for is exclusive of the last row
             assert_eq!(before[row], after[row]);
         }
     }
@@ -439,7 +521,7 @@ mod tests {
         // row 18:      1 0 0 0 0 0 0 0 0 0
         // row 19:      1 0 0 0 1 0 0 0 0 0
     }
-    
+
     fn get_expected_board_representation_on_initialization() -> Vec<Vec<usize>> {
         let expected_board: Vec<Vec<usize>> = vec![
             vec![0; COLS],

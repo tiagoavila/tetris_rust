@@ -1,41 +1,27 @@
+
 use rodio::{Decoder, OutputStream, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
 
 pub struct AudioPlayer {
-    sink: Option<Sink>,
-    _stream: Option<OutputStream>,
+    sink: Sink,
+    _stream: OutputStream,
 }
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        if let Ok((_stream, handle)) = OutputStream::try_default() {
-            if let Ok(sink) = Sink::try_new(&handle) {
-                return Self {
-                    sink: Some(sink),
-                    _stream: Some(_stream),
-                };
-            }
-        }
-        Self {
-            sink: None,
-            _stream: None,
-        }
+        let (_stream, handle) = OutputStream::try_default().expect("Failed to get audio output stream");
+        let sink = Sink::try_new(&handle).expect("Failed to create audio sink");
+        Self { sink, _stream }
     }
 
     pub fn play_loop(&self) {
-        if let Some(sink) = &self.sink {
-            if let Ok(file) = File::open("sounds/Tetris.mp3") {
-                if let Ok(source) = Decoder::new(BufReader::new(file)) {
-                    sink.append(source.repeat_infinite());
-                }
-            }
-        }
+        let file = File::open("sounds/Tetris.mp3").expect("Failed to open audio file");
+        let source = Decoder::new(BufReader::new(file)).expect("Failed to decode audio file");
+        self.sink.append(source.repeat_infinite());
     }
 
     pub fn stop(&self) {
-        if let Some(sink) = &self.sink {
-            sink.stop();
-        }
+        self.sink.stop();
     }
 }

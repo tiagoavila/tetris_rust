@@ -52,11 +52,13 @@ fn draw_filled_cells(board: &Board) {
         });
 }
 
-pub fn draw_piece(piece: &Piece) {
-    for block in &piece.blocks {
-        let row = (piece.position.y + block.y) as usize;
-        let col = (piece.position.x + block.x) as usize;
-        draw_cell_piece(row, col, piece.color);
+pub fn draw_piece(game_piece: &Option<Piece>) {
+    if let Some(piece) = game_piece {
+        for block in &piece.blocks {
+            let row = (piece.position.y + block.y) as usize;
+            let col = (piece.position.x + block.x) as usize;
+            draw_cell_piece(row, col, piece.color);
+        }
     }
 }
 
@@ -92,6 +94,103 @@ pub fn draw_next_piece_section(next_piece: &Option<Piece>) {
     if let Some(next_piece) = next_piece {
         draw_next_piece(next_piece);
     }
+}
+
+pub fn draw_level_and_speed(level: usize, drop_speed: f64) {
+    let x_position = BOARD_X + BOARD_WIDTH + 40.0;
+    let y_position = BOARD_Y + 40.0 + 4.0 * CELL_SIZE + 40.0;
+    let level_text = format!("Level: {}", level);
+    let speed_text = format!("Drop Speed: {:.2}s", drop_speed);
+
+    macroquad::text::draw_text(&level_text, x_position, y_position, 24.0, BLUE);
+    macroquad::text::draw_text(&speed_text, x_position, y_position + 30.0, 24.0, BLUE);
+}
+
+pub fn draw_controls() {
+    let x_position = BOARD_X + BOARD_WIDTH + 40.0;
+    let y_position = BOARD_Y + 40.0 + 4.0 * CELL_SIZE + 110.0;
+    let controls = [
+        "Controls:",
+        "Left Arrow / A: Move Left",
+        "Right Arrow / D: Move Right",
+        "Up Arrow / W / X: Rotate Clockwise",
+        "Q / Z: Rotate Counter-Clockwise",
+        "Down Arrow / S: Soft Drop",
+        "Space: Hard Drop",
+        "Esc: Quit/Close"
+    ];
+    for (i, text) in controls.iter().enumerate() {
+        macroquad::text::draw_text(text, x_position, y_position + i as f32 * 22.0, 20.0, WHITE);
+    }
+}
+
+pub fn draw_game_over_message() {
+    let screen_width = macroquad::window::screen_width();
+    let screen_height = macroquad::window::screen_height();
+
+    // Rectangle dimensions
+    let rect_height = 120.0; // Increased height for additional text
+    let rect_y = (screen_height - rect_height) / 2.0;
+    let border_thickness = 3.0;
+
+    // Draw main rectangle (background)
+    macroquad::shapes::draw_rectangle(
+        0.0,
+        rect_y,
+        screen_width,
+        rect_height,
+        macroquad::color::DARKGRAY,
+    );
+
+    // Draw top border
+    macroquad::shapes::draw_rectangle(
+        0.0,
+        rect_y,
+        screen_width,
+        border_thickness,
+        macroquad::color::WHITE,
+    );
+
+    // Draw bottom border
+    macroquad::shapes::draw_rectangle(
+        0.0,
+        rect_y + rect_height - border_thickness,
+        screen_width,
+        border_thickness,
+        macroquad::color::WHITE,
+    );
+
+    // Main "Game Over" text
+    let main_text = "Game Over";
+    let main_font_size = 40.0;
+    let main_dimensions =
+        macroquad::text::measure_text(main_text, None, main_font_size as u16, 1.0);
+    let main_text_x = (screen_width - main_dimensions.width) / 2.0;
+    let main_text_y = rect_y + 40.0; // Position towards top of rectangle
+
+    macroquad::text::draw_text(
+        main_text,
+        main_text_x,
+        main_text_y,
+        main_font_size,
+        macroquad::color::RED,
+    );
+
+    // Instructions text
+    let instruction_text = "Press ESC or SPACE to close";
+    let instruction_font_size = 24.0;
+    let instruction_dimensions =
+        macroquad::text::measure_text(instruction_text, None, instruction_font_size as u16, 1.0);
+    let instruction_text_x = (screen_width - instruction_dimensions.width) / 2.0;
+    let instruction_text_y = rect_y + 80.0; // Below the main text
+
+    macroquad::text::draw_text(
+        instruction_text,
+        instruction_text_x,
+        instruction_text_y,
+        instruction_font_size,
+        macroquad::color::WHITE,
+    );
 }
 
 fn draw_next_piece(piece: &Piece) {
