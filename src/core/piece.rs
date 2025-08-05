@@ -39,7 +39,7 @@ impl Piece {
         }
     }
 
-    pub fn generate_random_piece() -> Self {
+    pub fn new_random() -> Self {
         let random_idx = rand::random_range(0..7);
         let piece_type = match random_idx {
             0 => PieceType::I,

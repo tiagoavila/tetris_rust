@@ -59,8 +59,8 @@ impl Game {
     }
 
     pub fn start(&mut self) {
-        self.current_piece = Some(Piece::generate_random_piece());
-        self.next_piece = Some(Piece::generate_random_piece());
+        self.current_piece = Some(Piece::new_random());
+        self.next_piece = Some(Piece::new_random());
     }
 
     pub fn move_piece_right(&mut self) {
@@ -223,7 +223,7 @@ impl Game {
             .place_piece(&self.current_piece.as_ref().unwrap().clone());
         self.detect_filled_rows();
         self.current_piece = self.next_piece.clone();
-        self.next_piece = Some(Piece::generate_random_piece());
+        self.next_piece = Some(Piece::new_random());
     }
 
     pub fn print_board_with_current_piece(&self) {

@@ -41,36 +41,19 @@ async fn main() {
         // Handle user input
         if is_key_released(KeyCode::Escape) {
             break;
-        }
-
-        if is_key_released(KeyCode::Left) || is_key_released(KeyCode::A) {
+        } else if is_key_released(KeyCode::Left) || is_key_released(KeyCode::A) {
             game.move_piece_left();
-        }
-
-        if is_key_released(KeyCode::Right) || is_key_released(KeyCode::D) {
+        } else if is_key_released(KeyCode::Right) || is_key_released(KeyCode::D) {
             game.move_piece_right();
-        }
-
-        if is_key_released(KeyCode::Up)
-            || is_key_released(KeyCode::W)
-            || is_key_released(KeyCode::X)
-        {
+        } else if is_key_released(KeyCode::Up) || is_key_released(KeyCode::W) || is_key_released(KeyCode::X) {
             game.rotate_piece(RotationDirection::Clockwise);
-        }
-
-        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::Z) {
+        } else if is_key_released(KeyCode::Q) || is_key_released(KeyCode::Z) {
             game.rotate_piece(RotationDirection::CounterClockwise);
-        }
-
-        if is_key_down(KeyCode::S) || is_key_down(KeyCode::Down) {
+        } else if is_key_down(KeyCode::S) || is_key_down(KeyCode::Down) {
             game.start_soft_drop();
-        }
-
-        if is_key_released(KeyCode::S) || is_key_released(KeyCode::Down) {
+        } else if is_key_released(KeyCode::S) || is_key_released(KeyCode::Down) {
             game.stop_soft_drop();
-        }
-
-        if is_key_released(KeyCode::Space) {
+        } else if is_key_released(KeyCode::Space) {
             game.hard_drop();
         }
 
